@@ -14,12 +14,12 @@ PassMan is a simple and secure password manager application for Android, built u
 ## Screenshots
 
 <!--  screenshots -->
-![Screenshot_20240628-133347](https://github.com/tadassolys/Passman/assets/103380760/c130515f-afea-4a61-b140-95afdd663624)
-![Screenshot_20240628-133400](https://github.com/tadassolys/Passman/assets/103380760/a8db4817-4529-4b63-bcc4-3376d1cfc2f9)
-![Screenshot_20240628-133354](https://github.com/tadassolys/Passman/assets/103380760/a4e49709-dd82-4b45-84f2-89ae5a40e50f)
-![Screenshot_20240628-133407](https://github.com/tadassolys/Passman/assets/103380760/f15c0532-dc83-4aef-b305-d356ab242a26)
-![Screenshot_20240628-133416](https://github.com/tadassolys/Passman/assets/103380760/f56a53d0-2f25-42b5-bf1d-f4d5c43716cd)
-![Screenshot_20240628-133424](https://github.com/tadassolys/Passman/assets/103380760/62781762-a4ac-4473-ab9b-d227e0ffe58a)
+<img src="https://github.com/tadassolys/Passman/assets/103380760/c130515f-afea-4a61-b140-95afdd663624" width="300" alt="Screenshot 1">
+<img src="https://github.com/tadassolys/Passman/assets/103380760/a8db4817-4529-4b63-bcc4-3376d1cfc2f9" width="300" alt="Screenshot 2">
+<img src="https://github.com/tadassolys/Passman/assets/103380760/a4e49709-dd82-4b45-84f2-89ae5a40e50f" width="300" alt="Screenshot 3">
+<img src="https://github.com/tadassolys/Passman/assets/103380760/f15c0532-dc83-4aef-b305-d356ab242a26" width="300" alt="Screenshot 4">
+<img src="https://github.com/tadassolys/Passman/assets/103380760/f56a53d0-2f25-42b5-bf1d-f4d5c43716cd" width="300" alt="Screenshot 5">
+<img src="https://github.com/tadassolys/Passman/assets/103380760/62781762-a4ac-4473-ab9b-d227e0ffe58a" width="300" alt="Screenshot 6">
 
 
 ## Installation
