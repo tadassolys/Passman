@@ -177,6 +177,10 @@ public class MainActivity extends AppCompatActivity {
             case R.id.menu_export:
                 showExportConfirmationDialog();
                 return true;
+            case R.id.menu_edit:
+                Intent editItemIntent = new Intent(MainActivity.this, EditItemActivity.class);
+                startActivity(editItemIntent);
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }

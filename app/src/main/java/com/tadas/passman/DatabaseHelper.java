@@ -208,4 +208,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return sharedPreferences.getString("password", null);
     }
 
+    public boolean updateItem(Item item) {
+        SQLiteDatabase db = getWritableDatabase(getStoredEncryptionKey());
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(COL2, item.getItemName());
+        contentValues.put(COL3, item.getUsername());
+        contentValues.put(COL4, item.getPassword());
+
+        String whereClause = COL1 + " = ?";
+        String[] whereArgs = {String.valueOf(item.getId())};
+
+        int result = db.update(TABLE_NAME, contentValues, whereClause, whereArgs);
+        return result > 0;
+    }
+
+
 }

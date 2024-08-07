@@ -37,6 +37,9 @@
             android:exported="true">
         </activity>
 
+        <activity android:name=".EditItemActivity" />
+
+
     </application>
 
 </manifest>

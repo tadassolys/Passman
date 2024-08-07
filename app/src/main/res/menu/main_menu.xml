@@ -1,6 +1,10 @@
-<!-- main_menu.xml -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/menu_edit"
+        android:title="Edit Item"
+        android:icon="@android:drawable/ic_menu_edit"
+        app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_add_item"
         android:icon="@android:drawable/ic_menu_add"

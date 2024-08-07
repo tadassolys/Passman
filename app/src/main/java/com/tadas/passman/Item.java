@@ -4,7 +4,7 @@ public class Item {
     private String itemName;
     private String username;
     private String password;
-    private int  id;
+    private int id;
 
     public Item(int id, String itemName, String username, String password) {
         this.id = id;
@@ -12,7 +12,11 @@ public class Item {
         this.username = username;
         this.password = password;
     }
-    public int getId() {return id; }
+
+    public int getId() {
+        return id;
+    }
+
     public String getItemName() {
         return itemName;
     }
@@ -25,4 +29,19 @@ public class Item {
         return password;
     }
 
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setItemName(String itemName) {
+        this.itemName = itemName;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
 }
