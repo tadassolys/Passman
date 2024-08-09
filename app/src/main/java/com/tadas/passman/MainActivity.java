@@ -9,6 +9,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -139,6 +140,14 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
 
         copyLogin = (copyLogin + 1) % 2;
+        // Schedule clipboard clearing after 30 seconds
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                clipboardManager.setPrimaryClip(ClipData.newPlainText("", ""));
+                //Toast.makeText(MainActivity.this, "Clipboard cleared", Toast.LENGTH_SHORT).show();
+            }
+        }, 30000); // 30000 milliseconds = 30 seconds
     }
 
     private void showDeleteConfirmationDialog(final Item item) {
