@@ -27,7 +27,7 @@ public class EditItemActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);  // You can reuse the same layout
+        setContentView(R.layout.activity_main); 
 
         listViewItems = findViewById(R.id.listViewItems);
         searchView = findViewById(R.id.searchView);
