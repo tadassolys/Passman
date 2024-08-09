@@ -41,6 +41,7 @@ public class AddItemActivity extends AppCompatActivity {
         String password = editTextPasswordAdd.getText().toString().trim();
 
         dbHelper.addData(item, username, password);
+        //Broadcast to notify the MainActivity
         Intent intent = new Intent("data_changed");
         sendBroadcast(intent);
         finish();

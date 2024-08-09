@@ -101,6 +101,11 @@ public class EditItemActivity extends AppCompatActivity {
                     item.setPassword(newPassword);
                     dbHelper.updateItem(item);
                     updateItemList("");
+
+                    //Broadcast to notify the MainActivity
+                    Intent intent = new Intent("data_changed");
+                    sendBroadcast(intent);
+
                     Toast.makeText(EditItemActivity.this, "Item updated", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(EditItemActivity.this, "Fields cannot be empty", Toast.LENGTH_SHORT).show();

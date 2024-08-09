@@ -29,6 +29,8 @@ public class MainActivity extends AppCompatActivity {
     private SearchView searchView;
     private BroadcastReceiver receiver;
     private List<Item> originalItemList;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
