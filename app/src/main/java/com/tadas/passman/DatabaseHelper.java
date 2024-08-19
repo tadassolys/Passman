@@ -7,18 +7,28 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Environment;
+import android.security.keystore.KeyGenParameterSpec;
+import android.security.keystore.KeyProperties;
 import android.widget.Toast;
+
 import net.sqlcipher.Cursor;
 import net.sqlcipher.database.SQLiteDatabase;
 import net.sqlcipher.database.SQLiteOpenHelper;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
+import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -29,14 +39,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COL3 = "USERNAME";
     private static final String COL4 = "PASSWORD";
 
-    protected static String PASSWORD;
+    private static final String KEYSTORE_ALIAS = "encryption_key_alias";
+    private static final String ANDROID_KEYSTORE = "AndroidKeyStore";
+    private static final String SHARED_PREFS_NAME = "regular_prefs";
+    private static final String ENCRYPTED_KEY_PREF = "encrypted_key";
 
-   private Context mContext;
+    private Context mContext;
+
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, 1);
         SQLiteDatabase.loadLibs(context);
         mContext = context;
-
     }
 
     @Override
@@ -89,9 +102,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         return itemList;
     }
+
     public List<Item> searchItemsByName(String itemName) {
         List<Item> itemList = new ArrayList<>();
-        SQLiteDatabase db = getReadableDatabase(PASSWORD);
+        SQLiteDatabase db = getReadableDatabase(getStoredEncryptionKey());
         Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_NAME +
                 " WHERE " + COL2 + " LIKE ?", new String[]{"%" + itemName + "%"});
 
@@ -115,7 +129,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return itemList;
     }
 
-    // possibility to store without encryption to txt
     public void exportDataToTxt(Context context) {
         List<Item> itemList = getAllItems();
         File exportDir = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "PassmanExports");
@@ -139,8 +152,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void exportDatabase(Context context) {
         SQLiteDatabase db = getReadableDatabase(getStoredEncryptionKey());
-        // Saves db to Documents folder.
-       // File exportDir = new File(context.getExternalFilesDir(null), "Android/data/" + context.getPackageName() + "/files/ExportedDatabases");
         File exportDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
         if (!exportDir.exists()) {
             exportDir.mkdirs();
@@ -169,8 +180,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-
-
     private void copyFile(File sourceFile, File destFile) throws IOException {
         FileChannel sourceChannel = null;
         FileChannel destChannel = null;
@@ -196,18 +205,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.delete(TABLE_NAME, whereClause, whereArgs);
     }
 
-
-
-    protected void storeEncryptionKey(String PASSWORD) {
-        SharedPreferences sharedPreferences = mContext.getSharedPreferences("regular_prefs", Context.MODE_PRIVATE);
-        sharedPreferences.edit().putString("password", PASSWORD).apply();
-    }
-
-    protected String getStoredEncryptionKey() {
-        SharedPreferences sharedPreferences = mContext.getSharedPreferences("regular_prefs", Context.MODE_PRIVATE);
-        return sharedPreferences.getString("password", null);
-    }
-
     public boolean updateItem(Item item) {
         SQLiteDatabase db = getWritableDatabase(getStoredEncryptionKey());
         ContentValues contentValues = new ContentValues();
@@ -222,5 +219,91 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return result > 0;
     }
 
+    protected void storeEncryptionKey(String encryptionKey) {
+        try {
+            KeyStore keyStore = KeyStore.getInstance(ANDROID_KEYSTORE);
+            keyStore.load(null);
 
+            if (!keyStore.containsAlias(KEYSTORE_ALIAS)) {
+                KeyGenerator keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE);
+                keyGenerator.init(
+                        new KeyGenParameterSpec.Builder(KEYSTORE_ALIAS,
+                                KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+                                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                                .build());
+                keyGenerator.generateKey();
+            }
+
+            SecretKey secretKey = ((KeyStore.SecretKeyEntry) keyStore.getEntry(KEYSTORE_ALIAS, null)).getSecretKey();
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+
+            byte[] encryptionKeyBytes = encryptionKey.getBytes();
+            byte[] iv = cipher.getIV();
+            byte[] encryptedKey = cipher.doFinal(encryptionKeyBytes);
+
+            SharedPreferences sharedPreferences = mContext.getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(ENCRYPTED_KEY_PREF, bytesToHex(encryptedKey));
+            editor.putString(ENCRYPTED_KEY_PREF + "_iv", bytesToHex(iv));
+            editor.apply();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    /**
+     * Retrieves the encryption key used for SQLCipher from SharedPreferences.
+     * The actual encryption key is not stored in SharedPreferences; only metadata needed for decryption (the encrypted key and IV) is stored there.
+     * This method decrypts the key using the stored IV (Initialization Vector) and
+     * the key from the Android Keystore, and returns the plaintext encryption key for use with SQLCipher.
+     */
+    protected String getStoredEncryptionKey() {
+        try {
+            SharedPreferences sharedPreferences = mContext.getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE);
+            String encryptedKeyHex = sharedPreferences.getString(ENCRYPTED_KEY_PREF, null);
+            String ivHex = sharedPreferences.getString(ENCRYPTED_KEY_PREF + "_iv", null);
+
+            if (encryptedKeyHex == null || ivHex == null) {
+                return null;
+            }
+
+            byte[] encryptedKey = hexStringToByteArray(encryptedKeyHex);
+            byte[] iv = hexStringToByteArray(ivHex);
+
+            KeyStore keyStore = KeyStore.getInstance(ANDROID_KEYSTORE);
+            keyStore.load(null);
+            SecretKey secretKey = ((KeyStore.SecretKeyEntry) keyStore.getEntry(KEYSTORE_ALIAS, null)).getSecretKey();
+
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            GCMParameterSpec spec = new GCMParameterSpec(128, iv);
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, spec);
+
+            byte[] decryptedKeyBytes = cipher.doFinal(encryptedKey);
+            return new String(decryptedKeyBytes);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // Helper method to convert byte array to hex string
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
+
+    // Helper method to convert hex string to byte array
+    private static byte[] hexStringToByteArray(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                    + Character.digit(s.charAt(i + 1), 16));
+        }
+        return data;
+    }
 }
