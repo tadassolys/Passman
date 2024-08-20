@@ -12,6 +12,12 @@ import androidx.appcompat.app.AppCompatActivity;
 public class EncryptionKeyInputActivity extends AppCompatActivity {
 
     private EditText manualEncryptionKey;
+     /*
+     * The PREFS_NAME and FIRST_RUN_FLAG work together to store and manage the state of whether the app has been run for the first time.
+     * PREFS_NAME is the name of the SharedPreferences file where the state is stored.
+     * FIRST_RUN_FLAG is the specific key within the SharedPreferences file that holds a boolean value,
+     * tracking whether the app has completed its first run setup.
+     */
     private static final String PREFS_NAME = "MyPrefsFile";
     private static final String FIRST_RUN_FLAG = "firstRunFlag";
 
