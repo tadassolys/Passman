@@ -103,53 +103,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return itemList;
     }
 
-    public List<Item> searchItemsByName(String itemName) {
-        List<Item> itemList = new ArrayList<>();
-        SQLiteDatabase db = getReadableDatabase(getStoredEncryptionKey());
-        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_NAME +
-                " WHERE " + COL2 + " LIKE ?", new String[]{"%" + itemName + "%"});
-
-        if (cursor != null) {
-            try {
-                if (cursor.moveToFirst()) {
-                    do {
-                        @SuppressLint("Range") int id = cursor.getInt(cursor.getColumnIndex(COL1));
-                        @SuppressLint("Range") String username = cursor.getString(cursor.getColumnIndex(COL3));
-                        @SuppressLint("Range") String password = cursor.getString(cursor.getColumnIndex(COL4));
-
-                        Item item = new Item(id, itemName, username, password);
-                        itemList.add(item);
-                    } while (cursor.moveToNext());
-                }
-            } finally {
-                cursor.close();
-            }
-        }
-
-        return itemList;
-    }
-
-    public void exportDataToTxt(Context context) {
-        List<Item> itemList = getAllItems();
-        File exportDir = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "PassmanExports");
-        if (!exportDir.exists()) {
-            exportDir.mkdirs();
-        }
-
-        File file = new File(exportDir, "exported_data.txt");
-        try {
-            FileWriter fileWriter = new FileWriter(file);
-            for (Item item : itemList) {
-                String line = item.getId() + ", " + item.getItemName() + ", " +
-                        item.getUsername() + ", " + item.getPassword() + "\n";
-                fileWriter.write(line);
-            }
-            fileWriter.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void exportDatabase(Context context) {
         SQLiteDatabase db = getReadableDatabase(getStoredEncryptionKey());
         File exportDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
