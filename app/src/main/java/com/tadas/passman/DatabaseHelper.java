@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Environment;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
+import android.util.Log;
 import android.widget.Toast;
 
 import net.sqlcipher.Cursor;
@@ -132,6 +133,47 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
+    public void importDatabase(File importFile) {
+        SQLiteDatabase db = getWritableDatabase(getStoredEncryptionKey());
+        SQLiteDatabase importDb = SQLiteDatabase.openOrCreateDatabase(importFile.getAbsolutePath(), getStoredEncryptionKey(), null);
+
+        try {
+            db.beginTransaction(); // Start a transaction
+
+            Cursor cursor = importDb.rawQuery("SELECT * FROM " + TABLE_NAME, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    ContentValues contentValues = new ContentValues();
+                    int itemNameIndex = cursor.getColumnIndex(COL2);
+                    int usernameIndex = cursor.getColumnIndex(COL3);
+                    int passwordIndex = cursor.getColumnIndex(COL4);
+
+                    if (itemNameIndex >= 0 && usernameIndex >= 0 && passwordIndex >= 0) {
+                        contentValues.put(COL2, cursor.getString(itemNameIndex));
+                        contentValues.put(COL3, cursor.getString(usernameIndex));
+                        contentValues.put(COL4, cursor.getString(passwordIndex));
+
+                        db.insert(TABLE_NAME, null, contentValues);
+                    } else {
+                        Log.e("DatabaseHelper", "One or more columns do not exist in the imported database.");
+                    }
+                } while (cursor.moveToNext());
+            }
+
+            if (cursor != null) {
+                cursor.close();
+            }
+
+            db.setTransactionSuccessful(); // Mark the transaction as successful
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error importing database: " + e.getMessage());
+        } finally {
+            db.endTransaction(); // End the transaction
+            importDb.close(); // Close the imported database
+        }
+    }
+
+
     private void copyFile(File sourceFile, File destFile) throws IOException {
         FileChannel sourceChannel = null;
         FileChannel destChannel = null;
@@ -204,6 +246,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             e.printStackTrace();
         }
     }
+
     /**
      * Retrieves the encryption key used for SQLCipher from SharedPreferences.
      * The actual encryption key is not stored in SharedPreferences; only metadata needed for decryption (the encrypted key and IV) is stored there.

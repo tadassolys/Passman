@@ -12,7 +12,12 @@
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/menu_export"
-        android:title="Export Data"
+        android:title="Export Database"
+        android:icon="@android:drawable/ic_menu_save"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/menu_import"
+        android:title="Import Data"
         android:icon="@android:drawable/ic_menu_save"
         app:showAsAction="ifRoom" />
 </menu>

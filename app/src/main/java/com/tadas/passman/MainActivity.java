@@ -8,8 +8,12 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.OpenableColumns;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -17,7 +21,14 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.Toast;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -89,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
         };
 
         registerReceiver(receiver, new IntentFilter("data_changed"));
-        }
+    }
 
     @Override
     protected void onDestroy() {
@@ -192,6 +203,9 @@ public class MainActivity extends AppCompatActivity {
                 Intent editItemIntent = new Intent(MainActivity.this, EditItemActivity.class);
                 startActivity(editItemIntent);
                 return true;
+            case R.id.menu_import:
+                showImportFileChooser();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -215,6 +229,7 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .show();
     }
+
     private void exportData() {
         try {
             dbHelper.exportDatabase(getApplicationContext());
@@ -223,5 +238,72 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
             Toast.makeText(this, "Error exporting data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    //reikia naujo approucho
+    // Initialize ActivityResultLauncher for file chooser
+    private final ActivityResultLauncher<Intent> importFileLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    Uri uri = result.getData().getData();
+                    if (uri != null) {
+                        importDatabaseFromUri(uri); // Import the database
+                    }
+                }
+            }
+    );
+
+    // Show file chooser to select a database file
+    private void showImportFileChooser() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/octet-stream"); // Adjust MIME type if necessary
+        importFileLauncher.launch(intent); // Use the ActivityResultLauncher
+    }
+
+    // Handle file import from URI using ContentResolver
+    private void importDatabaseFromUri(Uri uri) {
+        try {
+            // Open input stream from the content URI
+            InputStream inputStream = getContentResolver().openInputStream(uri);
+            if (inputStream != null) {
+                // Create a temporary file to store the database
+                File tempFile = new File(getFilesDir(), getFileNameFromUri(uri));
+                FileOutputStream outputStream = new FileOutputStream(tempFile);
+
+                // Copy input stream to the output stream
+                byte[] buffer = new byte[1024];
+                int length;
+                while ((length = inputStream.read(buffer)) > 0) {
+                    outputStream.write(buffer, 0, length);
+                }
+
+                outputStream.close();
+                inputStream.close();
+
+                // Now import the database
+                dbHelper.importDatabase(tempFile);
+                Toast.makeText(this, "Database imported successfully", Toast.LENGTH_SHORT).show();
+                updateItemList(""); // Refresh item list after import
+            }
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error importing database: " + e.getMessage());
+            Toast.makeText(this, "Failed to import database", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // Get the file name from the URI
+    private String getFileNameFromUri(Uri uri) {
+        String fileName = "exported_items.db";
+        Cursor cursor = getContentResolver().query(uri, null, null, null, null);
+        if (cursor != null) {
+            int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+            if (cursor.moveToFirst() && nameIndex >= 0) {
+                fileName = cursor.getString(nameIndex);
+            }
+            cursor.close();
+        }
+        return fileName;
     }
 }
