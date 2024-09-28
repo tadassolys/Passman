@@ -10,6 +10,7 @@ PassMan is a simple and secure password manager application for Android, built u
 - **Copy to Clipboard**: Copy usernames or passwords to the clipboard with a single tap.
 - **Delete Credentials**: Long-press to delete credentials with a confirmation dialog.
 - **Export Database**: Export the encrypted database for backup purposes.
+- **Import Database**: Import the encrypted database.
 
 ## Screenshots
 
