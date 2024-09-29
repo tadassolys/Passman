@@ -1,1 +1,6 @@
 /build
+# Ignore Gradle cache and other temporary build files
+.gradle/
+
+# Ignore Android Studio/IntelliJ IDEA project files
+.idea/
