@@ -262,48 +262,60 @@ public class MainActivity extends AppCompatActivity {
         importFileLauncher.launch(intent); // Use the ActivityResultLauncher
     }
 
-    // Handle file import from URI using ContentResolver
-    private void importDatabaseFromUri(Uri uri) {
-        try {
-            // Open input stream from the content URI
-            InputStream inputStream = getContentResolver().openInputStream(uri);
-            if (inputStream != null) {
-                // Create a temporary file to store the database
-                File tempFile = new File(getFilesDir(), getFileNameFromUri(uri));
-                FileOutputStream outputStream = new FileOutputStream(tempFile);
+    // Importuoja duomenų bazę iš nurodyto URI
+private void importDatabaseFromUri(Uri uri) {
+    File tempFile = null;
+    try {
+        // Atidaro įvesties srautą iš URI (failo, kurį pasirinko vartotojas)
+        InputStream inputStream = getContentResolver().openInputStream(uri);
+        if (inputStream != null) {
+            // Sukuriamas laikinas failas su originaliu failo pavadinimu
+            tempFile = new File(getFilesDir(), getFileNameFromUri(uri));
+            FileOutputStream outputStream = new FileOutputStream(tempFile);
 
-                // Copy input stream to the output stream
-                byte[] buffer = new byte[1024];
-                int length;
-                while ((length = inputStream.read(buffer)) > 0) {
-                    outputStream.write(buffer, 0, length);
-                }
-
-                outputStream.close();
-                inputStream.close();
-
-                // Now import the database
-                dbHelper.importDatabase(tempFile);
-                Toast.makeText(this, "Database imported successfully", Toast.LENGTH_SHORT).show();
-                updateItemList(""); // Refresh item list after import
+            // Kopijuoja duomenis iš inputStream į outputStream (laikiną failą)
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = inputStream.read(buffer)) > 0) {
+                outputStream.write(buffer, 0, length);
             }
-        } catch (Exception e) {
-            Log.e("MainActivity", "Error importing database: " + e.getMessage());
-            Toast.makeText(this, "Failed to import database", Toast.LENGTH_SHORT).show();
+
+            // Uždaromi srautai po kopijavimo
+            outputStream.close();
+            inputStream.close();
+
+            // Importuojama duomenų bazė iš laikino failo
+            dbHelper.importDatabase(tempFile);
+            Toast.makeText(this, "Duomenų bazė sėkmingai importuota", Toast.LENGTH_SHORT).show();
+            updateItemList(""); 
+        }
+    } catch (Exception e) {
+        Log.e("MainActivity", "Klaida importuojant duomenų bazę: " + e.getMessage());
+        Toast.makeText(this, "Nepavyko importuoti duomenų bazės", Toast.LENGTH_SHORT).show();
+    } finally {
+        // Ištriname laikiną failą po importavimo, jei jis buvo sukurtas
+        if (tempFile != null && tempFile.exists()) {
+            boolean deleted = tempFile.delete();
+            if (deleted) {
+                Log.d("MainActivity", "Laikinas failas ištrintas.");
+            } else {
+                Log.e("MainActivity", "Nepavyko ištrinti laikino failo.");
+            }
         }
     }
+}
 
-    // Get the file name from the URI
-    private String getFileNameFromUri(Uri uri) {
-        String fileName = "exported_items.db";
-        Cursor cursor = getContentResolver().query(uri, null, null, null, null);
-        if (cursor != null) {
-            int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-            if (cursor.moveToFirst() && nameIndex >= 0) {
-                fileName = cursor.getString(nameIndex);
-            }
-            cursor.close();
+// Gauti failo pavadinimą iš URI
+private String getFileNameFromUri(Uri uri) {
+    String fileName = "exported_items.db"; // Numatytas failo pavadinimas (jei nepavyksta gauti)
+    Cursor cursor = getContentResolver().query(uri, null, null, null, null);
+    if (cursor != null) {
+        int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+        if (cursor.moveToFirst() && nameIndex >= 0) {
+            fileName = cursor.getString(nameIndex); // Gauti tikrą failo pavadinimą
         }
-        return fileName;
+        cursor.close();
     }
+    return fileName;
+}
 }
