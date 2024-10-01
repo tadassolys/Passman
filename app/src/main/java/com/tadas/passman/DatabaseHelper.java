@@ -44,7 +44,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String SHARED_PREFS_NAME = "regular_prefs";
     private static final String ENCRYPTED_KEY_PREF = "encrypted_key";
 
-    private Context mContext;
+    private final Context mContext;
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, 1);
@@ -67,14 +67,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    public boolean addData(String item, String username, String password) {
+    public void addData(String item, String username, String password) {
         SQLiteDatabase db = getWritableDatabase(getStoredEncryptionKey());
         ContentValues contentValues = new ContentValues();
         contentValues.put(COL2, item);
         contentValues.put(COL3, username);
         contentValues.put(COL4, password);
-        long result = db.insert(TABLE_NAME, null, contentValues);
-        return result != -1;
+        db.insert(TABLE_NAME, null, contentValues);
     }
 
     public List<Item> getAllItems() {
@@ -135,9 +134,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void importDatabase(File importFile) {
         SQLiteDatabase db = getWritableDatabase(getStoredEncryptionKey());
-        SQLiteDatabase importDb = SQLiteDatabase.openOrCreateDatabase(importFile.getAbsolutePath(), getStoredEncryptionKey(), null);
 
-        try {
+        try (SQLiteDatabase importDb = SQLiteDatabase.openOrCreateDatabase(importFile.getAbsolutePath(), getStoredEncryptionKey(), null)) {
             db.beginTransaction(); // Start a transaction
 
             Cursor cursor = importDb.rawQuery("SELECT * FROM " + TABLE_NAME, null);
@@ -169,26 +167,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             Log.e("DatabaseHelper", "Error importing database: " + e.getMessage());
         } finally {
             db.endTransaction(); // End the transaction
-            importDb.close(); // Close the imported database
+            // Close the imported database
         }
     }
 
 
     private void copyFile(File sourceFile, File destFile) throws IOException {
-        FileChannel sourceChannel = null;
-        FileChannel destChannel = null;
 
-        try {
-            sourceChannel = new FileInputStream(sourceFile).getChannel();
-            destChannel = new FileOutputStream(destFile).getChannel();
+        try (FileChannel sourceChannel = new FileInputStream(sourceFile).getChannel(); FileChannel destChannel = new FileOutputStream(destFile).getChannel()) {
             destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
-        } finally {
-            if (sourceChannel != null) {
-                sourceChannel.close();
-            }
-            if (destChannel != null) {
-                destChannel.close();
-            }
         }
     }
 
@@ -199,7 +186,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.delete(TABLE_NAME, whereClause, whereArgs);
     }
 
-    public boolean updateItem(Item item) {
+    public void updateItem(Item item) {
         SQLiteDatabase db = getWritableDatabase(getStoredEncryptionKey());
         ContentValues contentValues = new ContentValues();
         contentValues.put(COL2, item.getItemName());
@@ -209,8 +196,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String whereClause = COL1 + " = ?";
         String[] whereArgs = {String.valueOf(item.getId())};
 
-        int result = db.update(TABLE_NAME, contentValues, whereClause, whereArgs);
-        return result > 0;
+        db.update(TABLE_NAME, contentValues, whereClause, whereArgs);
     }
 
     protected void storeEncryptionKey(String encryptionKey) {

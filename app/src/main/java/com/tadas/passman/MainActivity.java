@@ -1,23 +1,22 @@
 package com.tadas.passman;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.OpenableColumns;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.Toast;
@@ -31,14 +30,13 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ListView listViewItems;
     private ArrayList<Item> itemList;
     private ItemAdapter itemAdapter;
     private DatabaseHelper dbHelper;
-    private SearchView searchView;
     private BroadcastReceiver receiver;
     private List<Item> originalItemList;
 
@@ -48,8 +46,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        listViewItems = findViewById(R.id.listViewItems);
-        searchView = findViewById(R.id.searchView);
+        ListView listViewItems = findViewById(R.id.listViewItems);
+        SearchView searchView = findViewById(R.id.searchView);
 
         dbHelper = new DatabaseHelper(this);
 
@@ -71,21 +69,15 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        listViewItems.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Item clickedItem = itemList.get(position);
-                copyToClipboard(copyLogin == 0 ? clickedItem.getUsername() : clickedItem.getPassword());
-            }
+        listViewItems.setOnItemClickListener((parent, view, position, id) -> {
+            Item clickedItem = itemList.get(position);
+            copyToClipboard(copyLogin == 0 ? clickedItem.getUsername() : clickedItem.getPassword());
         });
 
-        listViewItems.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                final Item longClickedItem = itemList.get(position);
-                showDeleteConfirmationDialog(longClickedItem);
-                return true;
-            }
+        listViewItems.setOnItemLongClickListener((parent, view, position, id) -> {
+            final Item longClickedItem = itemList.get(position);
+            showDeleteConfirmationDialog(longClickedItem);
+            return true;
         });
 
         updateItemList("");
@@ -93,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (intent.getAction().equals("data_changed")) {
+                if (Objects.equals(intent.getAction(), "data_changed")) {
                     updateItemList("");
                 }
             }
@@ -152,12 +144,9 @@ public class MainActivity extends AppCompatActivity {
 
         copyLogin = (copyLogin + 1) % 2;
         // Schedule clipboard clearing after 30 seconds
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                clipboardManager.setPrimaryClip(ClipData.newPlainText("", ""));
-                //Toast.makeText(MainActivity.this, "Clipboard cleared", Toast.LENGTH_SHORT).show();
-            }
+        new Handler().postDelayed(() -> {
+            clipboardManager.setPrimaryClip(ClipData.newPlainText("", ""));
+            //Toast.makeText(MainActivity.this, "Clipboard cleared", Toast.LENGTH_SHORT).show();
         }, 30000); // 30000 milliseconds = 30 seconds
     }
 
@@ -165,20 +154,12 @@ public class MainActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Confirm Deletion");
         builder.setMessage("Are you sure you want to delete this item?");
-        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dbHelper.deleteItem(item);
-                updateItemList("");
-                dialog.dismiss();
-            }
+        builder.setPositiveButton("Yes", (dialog, which) -> {
+            dbHelper.deleteItem(item);
+            updateItemList("");
+            dialog.dismiss();
         });
-        builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
+        builder.setNegativeButton("No", (dialog, which) -> dialog.dismiss());
 
         builder.create().show();
     }
@@ -189,6 +170,7 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    @SuppressLint("NonConstantResourceId")
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -215,18 +197,8 @@ public class MainActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Export Database")
                 .setMessage("Are you sure you want to export the database?")
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        exportData();
-                    }
-                })
-                .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                })
+                .setPositiveButton("Yes", (dialog, which) -> exportData())
+                .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
                 .show();
     }
 
@@ -240,7 +212,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    //reikia naujo approucho
     // Initialize ActivityResultLauncher for file chooser
     private final ActivityResultLauncher<Intent> importFileLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -287,7 +258,7 @@ private void importDatabaseFromUri(Uri uri) {
             // Importuojama duomenų bazė iš laikino failo
             dbHelper.importDatabase(tempFile);
             Toast.makeText(this, "Duomenų bazė sėkmingai importuota", Toast.LENGTH_SHORT).show();
-            updateItemList(""); 
+            updateItemList("");
         }
     } catch (Exception e) {
         Log.e("MainActivity", "Klaida importuojant duomenų bazę: " + e.getMessage());

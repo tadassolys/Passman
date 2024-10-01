@@ -1,11 +1,9 @@
 package com.tadas.passman;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SearchView;
@@ -18,19 +16,17 @@ import java.util.List;
 
 public class EditItemActivity extends AppCompatActivity {
 
-    private ListView listViewItems;
     private ArrayList<Item> itemList;
     private ItemAdapter itemAdapter;
     private DatabaseHelper dbHelper;
-    private SearchView searchView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main); 
+        setContentView(R.layout.activity_main);
 
-        listViewItems = findViewById(R.id.listViewItems);
-        searchView = findViewById(R.id.searchView);
+        ListView listViewItems = findViewById(R.id.listViewItems);
+        SearchView searchView = findViewById(R.id.searchView);
 
         dbHelper = new DatabaseHelper(this);
 
@@ -51,12 +47,9 @@ public class EditItemActivity extends AppCompatActivity {
             }
         });
 
-        listViewItems.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Item clickedItem = itemList.get(position);
-                showEditDialog(clickedItem);
-            }
+        listViewItems.setOnItemClickListener((parent, view, position, id) -> {
+            Item clickedItem = itemList.get(position);
+            showEditDialog(clickedItem);
         });
 
         updateItemList("");
@@ -90,26 +83,23 @@ public class EditItemActivity extends AppCompatActivity {
         editTextUsername.setText(item.getUsername());
         editTextPassword.setText(item.getPassword());
 
-        builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String newUsername = editTextUsername.getText().toString().trim();
-                String newPassword = editTextPassword.getText().toString().trim();
+        builder.setPositiveButton("Save", (dialog, which) -> {
+            String newUsername = editTextUsername.getText().toString().trim();
+            String newPassword = editTextPassword.getText().toString().trim();
 
-                if (!newUsername.isEmpty() && !newPassword.isEmpty()) {
-                    item.setUsername(newUsername);
-                    item.setPassword(newPassword);
-                    dbHelper.updateItem(item);
-                    updateItemList("");
+            if (!newUsername.isEmpty() && !newPassword.isEmpty()) {
+                item.setUsername(newUsername);
+                item.setPassword(newPassword);
+                dbHelper.updateItem(item);
+                updateItemList("");
 
-                    //Broadcast to notify the MainActivity
-                    Intent intent = new Intent("data_changed");
-                    sendBroadcast(intent);
+                //Broadcast to notify the MainActivity
+                Intent intent = new Intent("data_changed");
+                sendBroadcast(intent);
 
-                    Toast.makeText(EditItemActivity.this, "Item updated", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(EditItemActivity.this, "Fields cannot be empty", Toast.LENGTH_SHORT).show();
-                }
+                Toast.makeText(EditItemActivity.this, "Item updated", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(EditItemActivity.this, "Fields cannot be empty", Toast.LENGTH_SHORT).show();
             }
         });
 

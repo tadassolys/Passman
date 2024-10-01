@@ -1,7 +1,7 @@
 package com.tadas.passman;
 
 public class Item {
-    private String itemName;
+    private final String itemName;
     private String username;
     private String password;
     private int id;
@@ -31,10 +31,6 @@ public class Item {
 
     public void setId(int id) {
         this.id = id;
-    }
-
-    public void setItemName(String itemName) {
-        this.itemName = itemName;
     }
 
     public void setUsername(String username) {
