@@ -1,6 +1,6 @@
 # PassMan
 
-PassMan is a simple and secure password manager application for Android, built using SQLCipher for database encryption. It allows users to store and manage their usernames and passwords securely. The app provides functionality for adding, viewing, searching, copying, and deleting credentials, as well as exporting the database for backup purposes. This application is designed to securely manage main passwords and recovery codes without relying on any cloud services. The database can be utilized on both mobile devices and PCs, providing a reliable backup solution for your sensitive information.
+PassMan is secure password manager application for Android, built using SQLCipher for database encryption. It allows users to store and manage their usernames and passwords securely. The app provides functionality for adding, viewing, searching, copying, and deleting credentials, as well as exporting the database for backup purposes. This application is designed to securely manage main passwords and recovery codes without relying on any cloud services. The database can be utilized on both mobile devices and PCs, providing a reliable backup solution for your sensitive information.
 
 ## Features
 
