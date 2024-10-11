@@ -3,7 +3,6 @@ package com.tadas.passman;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
@@ -32,24 +31,21 @@ public class EncryptionKeyInputActivity extends AppCompatActivity {
             Button inputSaltButton = findViewById(R.id.inputEncryptionButton);
 
 
-            inputSaltButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    String enteredEncryptionPassword = manualEncryptionKey.getText().toString();
+            inputSaltButton.setOnClickListener(view -> {
+                String enteredEncryptionPassword = manualEncryptionKey.getText().toString();
 
-                    DatabaseHelper databaseHelper = new DatabaseHelper(EncryptionKeyInputActivity.this);
-                    databaseHelper.storeEncryptionKey(enteredEncryptionPassword);
+                DatabaseHelper databaseHelper = new DatabaseHelper(EncryptionKeyInputActivity.this);
+                databaseHelper.storeEncryptionKey(enteredEncryptionPassword);
 
-                    navigateToMainActivity(true);
-                }
+                navigateToMainActivity();
             });
-            setFirstRunFlag(false);
+            setFirstRunFlag();
         } else {
-            navigateToMainActivity(false);
+            navigateToMainActivity();
         }
     }
 
-    private void navigateToMainActivity(boolean manualInput) {
+    private void navigateToMainActivity() {
         Intent loginIntent = new Intent(EncryptionKeyInputActivity.this, MainActivity.class);
         startActivity(loginIntent);
         finish();
@@ -60,10 +56,10 @@ public class EncryptionKeyInputActivity extends AppCompatActivity {
         return prefs.getBoolean(FIRST_RUN_FLAG, true);
     }
 
-    private void setFirstRunFlag(boolean value) {
+    private void setFirstRunFlag() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
-        editor.putBoolean(FIRST_RUN_FLAG, value);
+        editor.putBoolean(FIRST_RUN_FLAG, false);
         editor.apply();
     }
 }
